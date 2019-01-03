@@ -347,10 +347,6 @@ en:
 
   excerpt_image: "image"
 
-  queue:
-    delete_reason: "Deleted via post moderation queue"
-    not_found: "Post not found or already updated."
-
   groups:
     success:
       bulk_add:
@@ -1712,7 +1708,7 @@ en:
     auto_silence_fast_typers_max_trust_level: "Maximum trust level to auto silence fast typers"
     auto_silence_first_post_regex: "Case insensitive regex that if passed will cause first post by user to be silenced and sent to approval queue. Example: raging|a[bc]a , will cause all posts containing raging or aba or aca to be silenced on first. Only applies to first post."
     flags_default_topics: "Show flagged topics by default in the admin section"
-    min_flags_staff_visibility: "The minimum amount of flags on a post must have before staff can see it in the admin section"
+    min_score_default_visibility: "Don't show reviewable items unless they meet this score"
 
     reply_by_email_enabled: "Enable replying to topics via email."
     reply_by_email_address: "Template for reply by email incoming email address, for example: %%{reply_key}@reply.example.com or replies+%%{reply_key}@example.com"
@@ -2394,8 +2390,8 @@ en:
     agreed: "Thanks for letting us know. We agree there is an issue and we're looking into it."
     agreed_and_deleted: "Thanks for letting us know. We agree there is an issue and we've removed the post."
     disagreed: "Thanks for letting us know. We're looking into it."
-    deferred: "Thanks for letting us know. We're looking into it."
-    deferred_and_deleted: "Thanks for letting us know. We've removed the post."
+    ignored: "Thanks for letting us know. We're looking into it."
+    ignored_and_deleted: "Thanks for letting us know. We've removed the post."
 
   temporarily_closed_due_to_flags:
     one: "This topic is temporarily closed for at least 1 hour due to a large number of community flags."
@@ -4310,3 +4306,49 @@ en:
     unknown: "unknown"
     user_merged: "%{username} was merged into this account"
     user_delete_self: "Deleted by self from %{url}"
+
+  reviewables:
+    missing_version: "You must supply a version parameter"
+    conflict: "There was an update conflict preventing you from doing that."
+    actions:
+      agree:
+        title: "Agree..."
+      agree_and_keep:
+        title: "Keep Post"
+        description: "Agree with flag and keep the post unchanged."
+      agree_and_suspend:
+        title: "Suspend User"
+        description: "Agree with flag and suspend the user."
+      agree_and_silence:
+        title: "Silence User"
+        description: "Agree with flag and silence the user."
+      agree_and_restore:
+        title: "Restore Post"
+        description: "Restore the post so that all users can see it."
+      agree_and_hide:
+        title: "Hide Post"
+        description: "Hide this post and automatically send the user a message urging them to edit it."
+      delete_spammer:
+        title: "Delete Spammer"
+        description: "Remove the user and all their posts and topics."
+        confirm: "Are you sure you want to delete all that user's posts, topics, and block their IP and email addresses?"
+      delete:
+        title: "Delete..."
+      delete_and_ignore:
+        title: "Delete Post and Ignore flag"
+        description: "Delete post; if the first post, delete the topic as well"
+      delete_and_agree:
+        title: "Delete Post and Agree with flag"
+        description: "Delete post; if the first post, delete the topic as well"
+      disagree:
+        title: "Disagree"
+      ignore:
+        title: "Ignore"
+      approve:
+        title: "Approve"
+      reject:
+        title: "Reject"
+      delete_user:
+        title: "Delete User"
+        confirm: "Are you sure you want to delete that user? This will remove all of their posts and block their email and IP address."
+        reason: "Deleted via review queue"
