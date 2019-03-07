@@ -393,7 +393,9 @@ class PostAlerter
       notification_data[:group_name] = group.name
     end
 
-    if original_post.via_email && (incoming_email = original_post.incoming_email)
+    if opts[:skip_send_email_to] && opts[:skip_send_email_to].include?(user.email)
+      skip_send_email = true
+    elsif original_post.via_email && (incoming_email = original_post.incoming_email)
       skip_send_email = contains_email_address?(incoming_email.to_addresses, user) ||
         contains_email_address?(incoming_email.cc_addresses, user)
     else
@@ -525,10 +527,31 @@ class PostAlerter
     users
   end
 
+  def notify_imap_users?(post)
+    post.post_type == Post.types[:regular] && post.topic&.first_post&.incoming_email&.imap_uid
+  end
+
   def notify_pm_users(post, reply_to_user, notified)
     return unless post.topic
 
     warn_if_not_sidekiq
+
+    if notify_imap_users?(post)
+      group = post.topic.allowed_groups.where('email_smtp_server IS NOT NULL').first
+      email_addresses = post.topic.incoming_email.pluck(:from_address)
+      email_addresses << group.email_username
+
+      email_addresses.each do |email|
+        # Do not send the email to the receiver or sender
+        # (they already have it in their mailbox).
+        next if email == post.incoming_email&.from_address || email == group.email_username
+        Jobs.enqueue(:group_smtp_email,
+          group_id: group.id,
+          email: email,
+          topic_id: post.topic.id,
+          post_id: post.id)
+      end
+    end
 
     # users that aren't part of any mentioned groups
     users = directly_targeted_users(post).reject { |u| notified.include?(u) }
@@ -536,7 +559,7 @@ class PostAlerter
     users.each do |user|
       notification_level = TopicUser.get(post.topic, user)&.notification_level
       if reply_to_user == user || notification_level == TopicUser.notification_levels[:watching] || user.staged?
-        create_notification(user, Notification.types[:private_message], post)
+        create_notification(user, Notification.types[:private_message], post, skip_send_email_to: email_addresses)
       end
     end
 
@@ -547,7 +570,7 @@ class PostAlerter
       case TopicUser.get(post.topic, user)&.notification_level
       when TopicUser.notification_levels[:watching]
         # only create a notification when watching the group
-        create_notification(user, Notification.types[:private_message], post)
+        create_notification(user, Notification.types[:private_message], post, skip_send_email_to: email_addresses)
       when TopicUser.notification_levels[:tracking]
         notify_group_summary(user, post)
       end
