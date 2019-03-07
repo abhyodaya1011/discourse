@@ -1,23 +1,33 @@
 require "net/imap"
 require_dependency "imap_gmail_patch"
 
+class ImapMailboxStatusParser
+  def self.parse(status)
+    parser = new(status)
+    return parser.to_h
+  end
+
+  def initialize(status)
+    @status = status
+  end
+
+  def to_h
+    {
+      uid_validity: @status["UIDVALIDITY"][-1]
+    }
+  end
+end
+
 module Email
-
   class ImapSync
+    attr_reader :capability
+    attr_reader :status
 
-    def initialize(group)
+    def initialize(group, imap_service = Net::IMAP)
       @group = group
-
-      @imap = Net::IMAP.new(group.email_imap_server, group.email_imap_port, group.email_imap_ssl)
-      @imap.login(group.email_username, group.email_password)
-
-      @labels = {}
-      @imap.list('', '*').each do |m|
-        if tag = to_tag(m.name)
-          @labels[tag] = m.name
-        end
-      end
-      @labels["important"] = "\\Important"
+      @imap = connect(imap_service, group)
+      @remote_mailboxes = @imap.list('', '*').map(&:name)
+      @labels = extract_labels(@remote_mailboxes)
 
       # TODO: Surround all relevant places with `if @is_gmail`.
       @is_gmail = group.email_imap_server == "imap.gmail.com"
@@ -33,12 +43,13 @@ module Email
       #       - fetch new messages
       @imap.examine(mailbox.name)
 
+      @status = ImapMailboxStatusParser.parse(@imap.responses)
+
       # Important operations on mailbox may invalidate mailbox and change
       # `UIDVALIDITY` attribute.
       #
       # In this case, mailbox must be resynchronized from scratch.
-      uid_validity = @imap.responses["UIDVALIDITY"][-1]
-      if uid_validity != mailbox.uid_validity
+      if @status[:uid_validity] != mailbox.uid_validity
         Rails.logger.warn("UIDVALIDITY does not match, invalidating IMAP cache and resync emails.")
         mailbox.last_seen_uid = 0
       end
@@ -59,29 +70,31 @@ module Email
         emails = @imap.uid_fetch(old_uids, ["UID", "FLAGS", "X-GM-LABELS"])
 
         emails.each do |email|
-          incoming_email = IncomingEmail.find_by(imap_uid_validity: uid_validity, imap_uid: email.attr["UID"])
+          incoming_email = IncomingEmail.find_by(imap_uid_validity: @status[:uid_validity], imap_uid: email.attr["UID"])
           update_topic(email, incoming_email)
         end
       end
 
       if new_uids.present?
         emails = @imap.uid_fetch(new_uids, ["UID", "FLAGS", "X-GM-LABELS", "RFC822"])
-
         emails.each do |email|
-          receiver = Email::Receiver.new(email.attr["RFC822"],
-            destinations: [{ type: :group, obj: @group }],
-            uid_validity: uid_validity,
-            uid: email.attr["UID"]
-          )
-          receiver.process!
-          update_topic(email, receiver.incoming_email)
+          begin
+            receiver = Email::Receiver.new(email.attr["RFC822"],
+              destinations: [{ type: :group, obj: @group }],
+              uid_validity: @status[:uid_validity],
+              uid: email.attr["UID"]
+            )
+            receiver.process!
+            update_topic(email, receiver.incoming_email)
 
-          mailbox.last_seen_uid = email.attr["UID"]
-        rescue Email::Receiver::ProcessingError
+            mailbox.last_seen_uid = email.attr["UID"]
+          rescue Email::Receiver::ProcessingError => e
+            p e
+          end
         end
       end
 
-      mailbox.uid_validity = uid_validity
+      mailbox.uid_validity = @status[:uid_validity]
       mailbox.save!
 
       @imap.select(mailbox.name)
@@ -101,7 +114,6 @@ module Email
 
     def update_topic(email, incoming_email)
       return if incoming_email&.post&.post_number != 1 || incoming_email.imap_sync
-
       labels = email.attr["X-GM-LABELS"]
       flags = email.attr["FLAGS"]
       topic = incoming_email.topic
@@ -150,6 +162,16 @@ module Email
       @imap.uid_store(uid, "-#{attribute}", removals) if removals.length > 0
     end
 
+    def tag_to_flag(tag)
+      :Seen if tag == "seen"
+    end
+
+    def tag_to_label(tag)
+      @labels[tag]
+    end
+
+    private
+
     def to_tag(label)
       label = label.to_s.gsub("[Gmail]/", "")
       label = DiscourseTagging.clean_tag(label.to_s)
@@ -157,12 +179,30 @@ module Email
       label if label != "all-mail" && label != "inbox" && label != "sent"
     end
 
-    def tag_to_flag(tag)
-      :Seen if tag == "seen"
+    def extract_labels(mailboxes)
+      labels = {}
+
+      mailboxes.each do |name|
+        if tag = to_tag(name)
+          labels[tag] = name
+        end
+      end
+
+      labels["important"] = "\\Important"
+
+      labels
     end
 
-    def tag_to_label(tag)
-      @labels[tag]
+    def connect(imap_service, group)
+      imap = imap_service.new(
+        group.email_imap_server,
+        group.email_imap_port,
+        group.email_imap_ssl,
+        nil,
+        false
+      )
+      imap.login(group.email_username, group.email_password)
+      imap
     end
   end
 
