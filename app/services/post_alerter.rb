@@ -528,7 +528,14 @@ class PostAlerter
   end
 
   def notify_imap_users?(post)
-    post.post_type == Post.types[:regular] && post.topic&.first_post&.incoming_email&.imap_uid
+    return false if post.post_type != Post.types[:regular]
+    # Notify only if post was not created from an email. The sender of the
+    # original email is responsible to press the "Reply all" button.
+    return false if post.incoming_email
+    # Sync only if this topic was created from an IMAP email
+    return false if !post.topic&.first_post&.incoming_email&.imap_uid
+
+    true
   end
 
   def notify_pm_users(post, reply_to_user, notified)
@@ -545,7 +552,8 @@ class PostAlerter
         # Do not send the email to the receiver or sender
         # (they already have it in their mailbox).
         next if email == post.incoming_email&.from_address || email == group.email_username
-        Jobs.enqueue(:group_smtp_email,
+        Jobs.enqueue_in(SiteSetting.email_time_window_mins.minutes,
+          :group_smtp_email,
           group_id: group.id,
           email: email,
           topic_id: post.topic.id,
