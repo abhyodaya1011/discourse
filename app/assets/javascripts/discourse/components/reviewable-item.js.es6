@@ -58,9 +58,7 @@ export default Ember.Component.extend({
           );
         })
         .catch(popupAjaxError)
-        .finally(() => {
-          this.set("updating", false);
-        });
+        .finally(() => this.set("updating", false));
     };
 
     if (action.client_action) {
@@ -126,9 +124,7 @@ export default Ember.Component.extend({
         .update(updates)
         .then(() => this.set("editing", false))
         .catch(popupAjaxError)
-        .finally(() => {
-          this.set("updating", false);
-        });
+        .finally(() => this.set("updating", false));
     },
 
     categoryChanged(category) {

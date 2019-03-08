@@ -3,11 +3,7 @@ import computed from "ember-addons/ember-computed-decorators";
 export default Ember.Component.extend({
   tagName: "",
 
-  @computed("bundle.actions.length")
-  multiple(length) {
-    return length > 1;
-  },
-
+  multiple: Ember.computed.gt("bundle.actions.length", 1),
   first: Ember.computed.alias("bundle.actions.firstObject"),
 
   actions: {

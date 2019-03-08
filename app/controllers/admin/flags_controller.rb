@@ -27,11 +27,12 @@ class Admin::FlagsController < Admin::AdminController
       }
     }
 
-    if (total_rows || 0) > (offset + per_page)
+    next_segment = offset + per_page
+    if (total_rows || 0) > next_segment
       meta[:total_rows_flagged_posts] = total_rows
       meta[:load_more_flagged_posts] = admin_flags_filtered_path(
         filter: params[:filter],
-        offset: offset + per_page,
+        offset: next_segment,
         topic_id: params[:topic_id]
       )
     end

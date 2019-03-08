@@ -4,8 +4,6 @@ export default Discourse.Route.extend({
   },
 
   setupController(controller, model) {
-    controller.setProperties({
-      reviewableTopics: model
-    });
+    controller.set("reviewableTopics", model);
   }
 });

@@ -44,10 +44,12 @@ export default Ember.Controller.extend({
     },
 
     refresh() {
-      this.set("type", this.get("filterType"));
-      this.set("min_score", this.get("filterScore"));
-      this.set("status", this.get("filterStatus"));
-      this.set("category_id", this.get("filterCategoryId"));
+      this.setProperties({
+        type: this.get("filterType"),
+        min_score: this.get("filterScore"),
+        status: this.get("filterStatus"),
+        category_id: this.get("filterCategoryId")
+      });
       this.send("refreshRoute");
     },
 
