@@ -551,7 +551,7 @@ class Report
     )
 
     countable = ReviewableFlaggedPost.scores_with_topics
-    countable = countable.merge(Topic.in_category_and_subcategories(report.category_id)) if report.category_id
+    countable.merge!(Topic.in_category_and_subcategories(report.category_id)) if report.category_id
 
     add_counts report, countable, 'reviewable_scores.created_at'
   end
