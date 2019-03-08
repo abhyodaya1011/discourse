@@ -92,7 +92,7 @@ export default Ember.Component.extend({
       let createdBy = reviewable.get("target_created_by");
       let postId = reviewable.get("post_id");
       let postEdit = reviewable.get("raw");
-      return this.get("adminTools")[adminToolMethod](createdBy, {
+      return adminTools[adminToolMethod](createdBy, {
         postId,
         postEdit,
         before: performAction
