@@ -40,7 +40,7 @@ class QueuedPostsController < ApplicationController
         reviewable.perform(current_user, :approve)
       elsif state == 'rejected'
         reviewable.perform(current_user, :reject)
-        if params[:queued_post][:delete_user] == 'true' && guardian.can_delete_user?(reviewable.created_by)
+        if update_params[:delete_user] == 'true' && guardian.can_delete_user?(reviewable.created_by)
           UserDestroyer.new(current_user).destroy(reviewable.created_by, user_deletion_opts)
         end
       end
