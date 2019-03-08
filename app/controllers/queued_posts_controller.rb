@@ -10,7 +10,7 @@ class QueuedPostsController < ApplicationController
     status = params[:state] || 'pending'
     status = 'pending' if status == 'new'
 
-    reviewables = Reviewable.list_for(current_user, status: status.to_sym, type: 'ReviewableQueuedPost')
+    reviewables = Reviewable.list_for(current_user, status: status.to_sym, type: ReviewableQueuedPost.name)
     render_serialized(reviewables,
                       QueuedPostSerializer,
                       root: :queued_posts,
