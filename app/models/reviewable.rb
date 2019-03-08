@@ -136,6 +136,7 @@ class Reviewable < ActiveRecord::Base
 
   # subclasses must implement "build_actions" to list the actions they're capable of
   def build_actions(actions, guardian, args)
+    raise NotImplementedError
   end
 
   # subclasses can implement "build_editable_fields" to list stuff that can be edited
