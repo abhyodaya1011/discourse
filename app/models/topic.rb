@@ -1362,7 +1362,7 @@ class Topic < ActiveRecord::Base
       .pluck("post_actions.user_id, COUNT(post_id)")
 
     # we need a minimum number of unique flaggers
-    return if flags.count < SiteSetting.num_flaggers_to_close_topic
+    return if flags.size < SiteSetting.num_flaggers_to_close_topic
 
     # we need a minimum number of flags
     return if flags.sum { |f| f[1] } < SiteSetting.num_flags_to_close_topic
