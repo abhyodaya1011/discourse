@@ -116,7 +116,7 @@ class Admin::FlagsController < Admin::AdminController
     params.permit(:id, :delete_post)
     post = Post.find(params[:id])
 
-    if reviewable = post&.reviewable_flag
+    if reviewable = post.reviewable_flag
       DiscourseEvent.trigger(
         :before_staff_flag_action,
         type: 'defer',
