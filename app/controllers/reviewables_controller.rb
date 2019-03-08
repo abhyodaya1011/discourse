@@ -18,11 +18,8 @@ class ReviewablesController < ApplicationController
     status = (params[:status] || 'pending').to_sym
     raise Discourse::InvalidParameter.new(:status) unless Reviewable.statuses[status].present?
 
-    category_id = nil
-    category_id = params[:category_id].to_i if params[:category_id]
-
-    topic_id = nil
-    topic_id = params[:topic_id].to_i if params[:topic_id]
+    topic_id = params[:topic_id] ? params[:topic_id].to_i : nil
+    category_id = params[:category_id] ? params[:category_id].to_i : nil
 
     total_rows = Reviewable.list_for(
       current_user,
