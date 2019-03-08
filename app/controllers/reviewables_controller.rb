@@ -90,8 +90,7 @@ class ReviewablesController < ApplicationController
   end
 
   def show
-    reviewable = Reviewable.viewable_by(current_user).where(id: params[:reviewable_id]).first
-    raise Discourse::NotFound.new if reviewable.blank?
+    reviewable = find_reviewable
 
     render_serialized(
       reviewable,
@@ -105,9 +104,7 @@ class ReviewablesController < ApplicationController
   end
 
   def update
-    reviewable = Reviewable.viewable_by(current_user).where(id: params[:reviewable_id]).first
-    raise Discourse::NotFound.new if reviewable.blank?
-
+    reviewable = find_reviewable
     editable = reviewable.editable_for(guardian)
     raise Discourse::InvalidAccess.new unless editable.present?
 
@@ -136,15 +133,10 @@ class ReviewablesController < ApplicationController
   end
 
   def perform
-    reviewable = Reviewable.viewable_by(current_user).where(id: params[:reviewable_id]).first
-    raise Discourse::NotFound.new if reviewable.blank?
-
-    args = {
-      version: params[:version].to_i
-    }
+    args = { version: params[:version].to_i }
 
     begin
-      result = reviewable.perform(current_user, params[:action_id].to_sym, args)
+      result = find_reviewable.perform(current_user, params[:action_id].to_sym, args)
     rescue Reviewable::InvalidAction => e
       # Consider InvalidAction an InvalidAccess
       raise Discourse::InvalidAccess.new(e.message)
@@ -160,6 +152,12 @@ class ReviewablesController < ApplicationController
   end
 
 protected
+
+  def find_reviewable
+    reviewable = Reviewable.viewable_by(current_user).where(id: params[:reviewable_id]).first
+    raise Discourse::NotFound.new if reviewable.blank?
+    reviewable
+  end
 
   def version_required
     if params[:version].blank?
