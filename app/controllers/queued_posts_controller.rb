@@ -26,7 +26,7 @@ class QueuedPostsController < ApplicationController
     update_params = params[:queued_post]
 
     reviewable.payload['raw'] = update_params[:raw] if update_params[:raw].present?
-    if reviewable.topic_id.blank? && params[:queued_post][:state].blank?
+    if reviewable.topic_id.blank? && update_params[:state].blank?
       reviewable.payload['title'] = update_params[:title] if update_params[:title].present?
       reviewable.payload['tags'] = update_params[:tags]
       reviewable.category_id = update_params[:category_id].to_i if update_params[:category_id].present?
