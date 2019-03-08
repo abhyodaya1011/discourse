@@ -34,7 +34,7 @@ class QueuedPostsController < ApplicationController
 
     reviewable.save(validate: false)
 
-    state = params[:queued_post][:state]
+    state = update_params[:state]
     begin
       if state == 'approved'
         reviewable.perform(current_user, :approve)
