@@ -45,7 +45,7 @@ class ReviewablesController < ApplicationController
     # This is a bit awkward, but ActiveModel serializers doesn't seem to serialize STI
     hash = {}
     json = {
-      reviewables: reviewables.map do |r|
+      reviewables: reviewables.map! do |r|
         result = r.serializer.new(r, root: nil, hash: hash, scope: guardian).as_json
         hash[:bundled_actions].uniq!
         (hash['actions'] || []).uniq!
