@@ -134,11 +134,11 @@ class Reviewable < ActiveRecord::Base
     EditableFields.new(self, guardian, args).tap { |a| build_editable_fields(a, guardian, args) }
   end
 
-  # subclasses implement "build_actions" to list the actions they're capable of
+  # subclasses must implement "build_actions" to list the actions they're capable of
   def build_actions(actions, guardian, args)
   end
 
-  # subclasses implement "build_editable_fields" to list stuff that can be edited
+  # subclasses can implement "build_editable_fields" to list stuff that can be edited
   def build_editable_fields(actions, guardian, args)
   end
 
